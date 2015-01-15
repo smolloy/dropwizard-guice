@@ -5,9 +5,13 @@ import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.servlets.tasks.Task;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import com.google.common.base.Preconditions;
-import com.google.inject.Injector;
-import com.sun.jersey.spi.inject.InjectableProvider;
+
+import java.lang.reflect.Modifier;
+import java.util.Set;
+
+import javax.ws.rs.Path;
+import javax.ws.rs.ext.Provider;
+
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
@@ -17,9 +21,9 @@ import org.reflections.util.FilterBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.Path;
-import javax.ws.rs.ext.Provider;
-import java.util.Set;
+import com.google.common.base.Preconditions;
+import com.google.inject.Injector;
+import com.sun.jersey.spi.inject.InjectableProvider;
 
 public class AutoConfig {
 
@@ -77,6 +81,7 @@ public class AutoConfig {
 		Set<Class<? extends InjectableHealthCheck>> healthCheckClasses = reflections
 				.getSubTypesOf(InjectableHealthCheck.class);
 		for (Class<? extends InjectableHealthCheck> healthCheck : healthCheckClasses) {
+			if(Modifier.isAbstract( healthCheck.getModifiers() )) continue; //skip abstract classes
             InjectableHealthCheck instance = injector.getInstance(healthCheck);
             environment.healthChecks().register(instance.getName(), instance);
 			logger.info("Added injectableHealthCheck: {}", healthCheck);
@@ -89,6 +94,7 @@ public class AutoConfig {
 		Set<Class<? extends InjectableProvider>> injectableProviders = reflections
 				.getSubTypesOf(InjectableProvider.class);
 		for (Class<? extends InjectableProvider> injectableProvider : injectableProviders) {
+			if(Modifier.isAbstract( injectableProvider.getModifiers() )) continue; //skip abstract classes
 			environment.jersey().register(injectableProvider);
 			logger.info("Added injectableProvider: {}", injectableProvider);
 		}
@@ -98,6 +104,7 @@ public class AutoConfig {
 		Set<Class<?>> providerClasses = reflections
 				.getTypesAnnotatedWith(Provider.class);
 		for (Class<?> provider : providerClasses) {
+			if(Modifier.isAbstract( provider.getModifiers() )) continue; //skip abstract classes
 			environment.jersey().register(provider);
 			logger.info("Added provider class: {}", provider);
 		}
@@ -107,6 +114,7 @@ public class AutoConfig {
 		Set<Class<?>> resourceClasses = reflections
 				.getTypesAnnotatedWith(Path.class);
 		for (Class<?> resource : resourceClasses) {
+			if(Modifier.isAbstract( resource.getModifiers() )) continue; //skip abstract classes
 			environment.jersey().register(resource);
 			logger.info("Added resource class: {}", resource);
 		}
@@ -116,6 +124,7 @@ public class AutoConfig {
 		Set<Class<? extends Bundle>> bundleClasses = reflections
 				.getSubTypesOf(Bundle.class);
 		for (Class<? extends Bundle> bundle : bundleClasses) {
+			if(Modifier.isAbstract( bundle.getModifiers() )) continue; //skip abstract classes
 			bootstrap.addBundle(injector.getInstance(bundle));
 			logger.info("Added bundle class {} during bootstrap", bundle);
 		}
